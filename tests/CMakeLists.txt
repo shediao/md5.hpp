@@ -21,12 +21,6 @@ FetchContent_Declare(
   GIT_TAG v0.0.3)
 FetchContent_MakeAvailable(subprocess)
 
-if(APPLE OR LINUX)
-  set(CMAKE_CXX_FLAGS_DEBUG
-      "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address,undefined -fno-omit-frame-pointer -fno-optimize-sibling-calls"
-  )
-endif()
-
 function(add_md5_test test_name test_files)
   add_executable(${test_name} ${test_files})
   if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU"
@@ -38,12 +32,6 @@ function(add_md5_test test_name test_files)
   endif()
   if(MSVC)
     target_compile_options(${test_name} PRIVATE /utf-8 /EHsc /W4)
-  endif()
-
-  if(APPLE OR LINUX)
-    target_compile_options(
-      ${test_name} PRIVATE "-fsanitize=address,undefined"
-                           -fno-omit-frame-pointer -fno-optimize-sibling-calls)
   endif()
 
   target_link_libraries(${test_name} PRIVATE md5::md5 subprocess::subprocess
