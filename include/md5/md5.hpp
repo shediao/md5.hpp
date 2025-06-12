@@ -1,5 +1,6 @@
 #ifndef __MD5_MD5_HPP__
 #define __MD5_MD5_HPP__
+#include <algorithm>
 #include <cstdint>
 #include <string>
 
