@@ -23,6 +23,11 @@ constexpr uint32_t S42 = 10;
 constexpr uint32_t S43 = 15;
 constexpr uint32_t S44 = 21;
 
+static constexpr unsigned char PADDING[64] = {
+    0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
 inline uint32_t F(uint32_t x, uint32_t y, uint32_t z) {
   return (x & y) | (~x & z);
 }
@@ -137,11 +142,6 @@ class MD5 {
   }
 
   void finalize() {
-    static unsigned char padding[64] = {
-        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
     if (!finalized_) {
       unsigned char bits[8];
       uint32_t counts[2]{static_cast<uint32_t>(count_),
@@ -151,7 +151,7 @@ class MD5 {
 
       size_t index = counts[0] / 8 % 64;
       size_t padLen = (index < 56) ? (56 - index) : (120 - index);
-      update(padding, padLen);
+      update(PADDING, padLen);
 
       update(bits, 8);
 
