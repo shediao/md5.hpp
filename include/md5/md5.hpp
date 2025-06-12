@@ -90,7 +90,7 @@ class MD5 {
     finalize();
   }
   std::string hexdigest() const {
-    if (!finalized) {
+    if (!finalized_) {
       return "";
     }
 
@@ -98,7 +98,7 @@ class MD5 {
 
     char buf[33];
     for (int i = 0; i < 16; i++) {
-      unsigned char c = digest[i];
+      unsigned char c = digest_[i];
       buf[i * 2] = hexs[c >> 4];
       buf[i * 2 + 1] = hexs[c & 0x0f];
     }
@@ -106,9 +106,58 @@ class MD5 {
 
     return std::string(buf);
   };
+  void update(const char input[], size_t length) {
+    update((const unsigned char *)input, length);
+  }
+  void update(const unsigned char *input, size_t length) {
+    size_t index = count_ / 8 % blocksize;
+    count_ += length << 3;
 
+    while (length > 0) {
+      if (length >= 64 - index) {
+        std::copy_n(input, 64 - index, &buffer_[index]);
+        transform(buffer_);
+        length -= (64 - index);
+        input += (64 - index);
+      } else {
+        std::copy_n(input, length, &buffer_[index]);
+        length = 0;
+        input = nullptr;
+      }
+      index = 0;
+    }
+  }
+
+  void finalize() {
+    static unsigned char padding[64] = {
+        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
+    if (!finalized_) {
+      unsigned char bits[8];
+      uint32_t counts[2]{static_cast<uint32_t>(count_),
+                         static_cast<uint32_t>(count_ >> 32)};
+
+      encode(bits, counts, 8);
+
+      size_t index = counts[0] / 8 % 64;
+      size_t padLen = (index < 56) ? (56 - index) : (120 - index);
+      update(padding, padLen);
+
+      update(bits, 8);
+
+      encode(digest_, state_, 16);
+
+      std::fill_n(buffer_, std::size(buffer_), 0);
+      count_ = 0;
+      finalized_ = true;
+    }
+  }
+
+ private:
   void transform(unsigned char *block) {
-    uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
+    uint32_t a = state_[0], b = state_[1], c = state_[2], d = state_[3], x[16];
     decode(x, block, blocksize);
 
     /* Round 1 */
@@ -183,68 +232,18 @@ class MD5 {
     II(c, d, a, b, x[2], S43, 0x2ad7d2bb);  /* 63 */
     II(b, c, d, a, x[9], S44, 0xeb86d391);  /* 64 */
 
-    state[0] += a;
-    state[1] += b;
-    state[2] += c;
-    state[3] += d;
+    state_[0] += a;
+    state_[1] += b;
+    state_[2] += c;
+    state_[3] += d;
   };
 
-  void update(const char input[], size_t length) {
-    update((const unsigned char *)input, length);
-  }
-  void update(const unsigned char *input, size_t length) {
-    size_t index = count / 8 % blocksize;
-    count += length << 3;
-
-    while (length > 0) {
-      if (length >= 64 - index) {
-        memcpy(&buffer[index], input, 64 - index);
-        transform(buffer);
-        length -= (64 - index);
-        input += (64 - index);
-      } else {
-        memcpy(&buffer[index], input, length);
-        length = 0;
-        input = nullptr;
-      }
-      index = 0;
-    }
-  }
-
-  void finalize() {
-    static unsigned char padding[64] = {
-        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-    if (!finalized) {
-      unsigned char bits[8];
-      uint32_t counts[2]{static_cast<uint32_t>(count),
-                         static_cast<uint32_t>(count >> 32)};
-
-      encode(bits, counts, 8);
-
-      size_t index = counts[0] / 8 % 64;
-      size_t padLen = (index < 56) ? (56 - index) : (120 - index);
-      update(padding, padLen);
-
-      update(bits, 8);
-
-      encode(digest, state, 16);
-
-      memset(buffer, 0, sizeof buffer);
-      count = 0;
-
-      finalized = true;
-    }
-  }
-
  private:
-  bool finalized{false};
-  unsigned char buffer[blocksize];
-  std::uint64_t count{0};
-  uint32_t state[4]{0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476};
-  unsigned char digest[16];
+  bool finalized_{false};
+  unsigned char buffer_[blocksize];
+  std::uint64_t count_{0};
+  uint32_t state_[4]{0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476};
+  unsigned char digest_[16];
 };
 
 inline std::string md5sum(std::string const &input) {
