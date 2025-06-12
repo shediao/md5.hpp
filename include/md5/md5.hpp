@@ -85,6 +85,14 @@ class MD5 {
 
  public:
   MD5();
+  MD5(const char *input, size_t length) {
+    update(input, length);
+    finalize();
+  }
+  MD5(const unsigned char *input, size_t length) {
+    update(input, length);
+    finalize();
+  }
   MD5(const std::string &text) {
     update(text.data(), text.size());
     finalize();
@@ -248,6 +256,12 @@ class MD5 {
 
 inline std::string md5sum(std::string const &input) {
   return MD5(input).hexdigest();
+}
+inline std::string md5sum(const char *input, size_t length) {
+  return MD5(input, length).hexdigest();
+}
+inline std::string md5sum(const unsigned char *input, size_t length) {
+  return MD5(input, length).hexdigest();
 }
 };  // namespace md5
 
