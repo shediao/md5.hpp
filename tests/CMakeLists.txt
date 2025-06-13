@@ -18,8 +18,14 @@ FetchContent_MakeAvailable(googletest)
 FetchContent_Declare(
   subprocess
   GIT_REPOSITORY https://github.com/shediao/subprocess.hpp
-  GIT_TAG v0.0.3)
+  GIT_TAG v0.0.4)
 FetchContent_MakeAvailable(subprocess)
+
+FetchContent_Declare(
+  environment
+  GIT_REPOSITORY https://github.com/shediao/environment.hpp
+  GIT_TAG v0.0.2)
+FetchContent_MakeAvailable(environment)
 
 function(add_md5_test test_name test_files)
   add_executable(${test_name} ${test_files})
@@ -34,8 +40,10 @@ function(add_md5_test test_name test_files)
     target_compile_options(${test_name} PRIVATE /utf-8 /EHsc /W4)
   endif()
 
-  target_link_libraries(${test_name} PRIVATE md5::md5 subprocess::subprocess
-                                             GTest::gtest GTest::gtest_main)
+  target_link_libraries(
+    ${test_name}
+    PRIVATE md5::md5 subprocess::subprocess environment::environment
+            GTest::gtest GTest::gtest_main)
   add_test(NAME ${test_name} COMMAND ${test_name})
 endfunction()
 

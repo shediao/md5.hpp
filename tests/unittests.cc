@@ -1,6 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <environment/environment.hpp>
 #include <md5/md5.hpp>
+#include <subprocess/subprocess.hpp>
 
 using md5::md5sum;
 
@@ -115,3 +118,29 @@ TEST(MD5Test, Test2) {
             "57edf4a22be3c955ac49da2e2107b67a");
   ASSERT_EQ(md5sum("你好啊"), "124756ef340daf80196b4124686d651c");
 }
+
+void test_md5sum_command(const std::string& s) {
+  std::vector<char> stdout_buf;
+  std::vector<char> stdin_buf{s.begin(), s.end()};
+  ASSERT_EQ(
+      0, subprocess::run("md5sum", $stdout > stdout_buf, $stdin < stdin_buf));
+  auto md5 = md5sum(stdin_buf.data(), stdin_buf.size());
+  ASSERT_TRUE(std::equal(md5.begin(), md5.begin(), stdout_buf.begin()));
+}
+
+#if !defined(_WIN32)
+TEST(MD5Test, Test3) {
+  auto envs = env::environs();
+  for (auto const& [key, value] : envs) {
+    test_md5sum_command(key + "=" + value);
+  }
+
+  std::vector<char> buf;
+  ASSERT_EQ(0, subprocess::run("uname", "-a", $stdout > buf));
+  test_md5sum_command({buf.data(), buf.size()});
+  buf.clear();
+  ASSERT_EQ(0, subprocess::run("printenv", $stdout > buf));
+  test_md5sum_command({buf.data(), buf.size()});
+  buf.clear();
+}
+#endif
