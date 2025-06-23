@@ -6,7 +6,6 @@
 #include <subprocess/subprocess.hpp>
 
 using md5::md5sum;
-using namespace std::string_view_literals;
 
 TEST(MD5Test, Test1){
 #undef TEST_MATCH
@@ -30,22 +29,22 @@ TEST(MD5Test, Test2) {
 }
 
 void test_md5sum_command(const std::string& s) {
-  std::vector<char> stdout_buf;
-  std::vector<char> stdin_buf{s.begin(), s.end()};
+  subprocess::buffer stdout_buf;
+  subprocess::buffer stdin_buf{{s.begin(), s.end()}};
   ASSERT_EQ(
       0, subprocess::run("md5sum", $stdout > stdout_buf, $stdin < stdin_buf));
   auto md5 = md5sum(stdin_buf.data(), stdin_buf.size());
-  ASSERT_TRUE(std::equal(md5.begin(), md5.begin(), stdout_buf.begin()));
+  ASSERT_TRUE(std::equal(md5.begin(), md5.begin(), stdout_buf.data()));
 }
 
 #if !defined(_WIN32)
 TEST(MD5Test, Test3) {
-  auto envs = env::environs();
+  auto envs = env::all();
   for (auto const& [key, value] : envs) {
     test_md5sum_command(key + "=" + value);
   }
 
-  std::vector<char> buf;
+  subprocess::buffer buf;
   ASSERT_EQ(0, subprocess::run("uname", "-a", $stdout > buf));
   test_md5sum_command({buf.data(), buf.size()});
   buf.clear();
@@ -56,12 +55,7 @@ TEST(MD5Test, Test3) {
 #endif
 
 template <size_t N>
-consteval bool test_equal(md5::static_string<N> const& s1,
-                          const std::string_view s2) {
-  if (s2.size() != s1.size()) {
-    return false;
-  }
-
+consteval bool test_equal(md5::static_string<N> const& s1, const char* s2) {
   for (size_t i = 0; i < s1.size(); i++) {
     if (s1[i] != s2[i]) {
       return false;
@@ -72,8 +66,6 @@ consteval bool test_equal(md5::static_string<N> const& s1,
 }
 TEST(MD5Test, Test4) {
 #undef TEST_MATCH
-#define TEST_MATCH(x, y)                                              \
-  static_assert(test_equal(md5::MD5(std::string_view(x)).hexdigest(), \
-                           std::string_view(y)))
+#define TEST_MATCH(x, y) static_assert(test_equal(md5::MD5(x).hexdigest(), y))
 #include "./test.h"
 }

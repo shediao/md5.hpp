@@ -20,7 +20,6 @@ target_include_directories(
   md5 INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                 $<INSTALL_INTERFACE:include>)
 
-target_compile_features(md5 INTERFACE cxx_std_20)
 add_library(md5::md5 ALIAS md5)
 
 if(MD5_BUILD_TESTS)

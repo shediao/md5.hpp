@@ -4,6 +4,12 @@
 #include <cstdint>
 #include <string>
 
+#if defined(_MSVC_LANG)
+#define CPLUSPLUS_VERSION _MSVC_LANG
+#else
+#define CPLUSPLUS_VERSION __cplusplus
+#endif
+
 namespace md5 {
 namespace detail {
 
@@ -177,8 +183,20 @@ class MD5 {
 
  public:
   constexpr MD5() noexcept {};
+#if CPLUSPLUS_VERSION >= 201703
   constexpr MD5(const std::string_view input) noexcept {
     update(input.data(), input.size());
+    finalize();
+  }
+#endif
+  constexpr MD5(decltype(nullptr)) = delete;
+  constexpr MD5(const char *input) noexcept {
+    size_t length = 0;
+    auto *it = input;
+    while (*it++ != '\0') {
+      length++;
+    }
+    update(input, length);
     finalize();
   }
   constexpr MD5(const char *input, size_t length) noexcept {
@@ -355,9 +373,11 @@ class MD5 {
   unsigned char digest_[16];
 };
 
+#if CPLUSPLUS_VERSION >= 201703
 inline std::string md5sum(std::string_view const &input) {
   return MD5(input.data(), input.size()).hexdigest();
 }
+#endif
 inline std::string md5sum(const char *input, size_t length) {
   return MD5(input, length).hexdigest();
 }
