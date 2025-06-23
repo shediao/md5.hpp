@@ -29,45 +29,50 @@ static constexpr unsigned char PADDING[64] = {
     0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-inline uint32_t F(uint32_t x, uint32_t y, uint32_t z) {
+constexpr inline uint32_t F(uint32_t x, uint32_t y, uint32_t z) noexcept {
   return (x & y) | (~x & z);
 }
 
-inline uint32_t G(uint32_t x, uint32_t y, uint32_t z) {
+constexpr inline uint32_t G(uint32_t x, uint32_t y, uint32_t z) noexcept {
   return (x & z) | (y & ~z);
 }
 
-inline uint32_t H(uint32_t x, uint32_t y, uint32_t z) { return x ^ y ^ z; }
+constexpr inline uint32_t H(uint32_t x, uint32_t y, uint32_t z) noexcept {
+  return x ^ y ^ z;
+}
 
-inline uint32_t I(uint32_t x, uint32_t y, uint32_t z) { return y ^ (x | ~z); }
+constexpr inline uint32_t I(uint32_t x, uint32_t y, uint32_t z) noexcept {
+  return y ^ (x | ~z);
+}
 
 // rotate_left rotates x left n bits.
-inline uint32_t rotate_left(uint32_t x, int n) {
+constexpr inline uint32_t rotate_left(uint32_t x, int n) noexcept {
   return (x << n) | (x >> (32 - n));
 }
 
 // FF, GG, HH, and II transformations for rounds 1, 2, 3, and 4.
 // Rotation is separate from addition to prevent recomputation.
-inline void FF(uint32_t &a, uint32_t b, uint32_t c, uint32_t d, uint32_t x,
-               uint32_t s, uint32_t ac) {
+constexpr inline void FF(uint32_t &a, uint32_t b, uint32_t c, uint32_t d,
+                         uint32_t x, uint32_t s, uint32_t ac) noexcept {
   a = rotate_left(a + F(b, c, d) + x + ac, s) + b;
 }
 
-inline void GG(uint32_t &a, uint32_t b, uint32_t c, uint32_t d, uint32_t x,
-               uint32_t s, uint32_t ac) {
+constexpr inline void GG(uint32_t &a, uint32_t b, uint32_t c, uint32_t d,
+                         uint32_t x, uint32_t s, uint32_t ac) noexcept {
   a = rotate_left(a + G(b, c, d) + x + ac, s) + b;
 }
 
-inline void HH(uint32_t &a, uint32_t b, uint32_t c, uint32_t d, uint32_t x,
-               uint32_t s, uint32_t ac) {
+constexpr inline void HH(uint32_t &a, uint32_t b, uint32_t c, uint32_t d,
+                         uint32_t x, uint32_t s, uint32_t ac) noexcept {
   a = rotate_left(a + H(b, c, d) + x + ac, s) + b;
 }
 
-inline void II(uint32_t &a, uint32_t b, uint32_t c, uint32_t d, uint32_t x,
-               uint32_t s, uint32_t ac) {
+constexpr inline void II(uint32_t &a, uint32_t b, uint32_t c, uint32_t d,
+                         uint32_t x, uint32_t s, uint32_t ac) noexcept {
   a = rotate_left(a + I(b, c, d) + x + ac, s) + b;
 }
-inline void decode(uint32_t output[], const unsigned char input[], size_t len) {
+constexpr inline void decode(uint32_t output[], const unsigned char input[],
+                             size_t len) noexcept {
   for (unsigned int i = 0, j = 0; j < len; i++, j += 4) {
     output[i] = ((uint32_t)input[j]) | (((uint32_t)input[j + 1]) << 8) |
                 (((uint32_t)input[j + 2]) << 16) |
@@ -75,7 +80,8 @@ inline void decode(uint32_t output[], const unsigned char input[], size_t len) {
   }
 }
 
-inline void encode(unsigned char output[], const uint32_t input[], size_t len) {
+constexpr inline void encode(unsigned char output[], const uint32_t input[],
+                             size_t len) noexcept {
   for (size_t i = 0, j = 0; j < len; i++, j += 4) {
     output[j] = input[i] & 0xff;
     output[j + 1] = (input[i] >> 8) & 0xff;
@@ -86,44 +92,138 @@ inline void encode(unsigned char output[], const uint32_t input[], size_t len) {
 
 }  // namespace detail
 
+template <size_t N, typename CharT>
+class static_basic_string {
+  friend class MD5;
+
+ public:
+  using value_type = CharT;
+  using pointer = CharT *;
+  using const_pointer = const CharT *;
+  using reference = CharT &;
+  using const_reference = const CharT &;
+  using iterator = pointer;
+  using const_iterator = const_pointer;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+  using size_type = size_t;
+  using difference_type = ptrdiff_t;
+  static const size_type npos = -1;  // size_type(-1);
+  constexpr bool empty() const noexcept { return size_ != 0; }
+  constexpr size_type size() const noexcept { return size_; }
+  constexpr size_type length() const noexcept { return size_; }
+  constexpr size_type max_size() const noexcept { return N; }
+  constexpr pointer data() noexcept { return data_; }
+  constexpr const_pointer data() const noexcept { return data_; }
+  constexpr reference operator[](size_type index) noexcept {
+    return data_[index];
+  }
+  constexpr const_reference operator[](size_type index) const noexcept {
+    return data_[index];
+  }
+  constexpr operator std::basic_string<value_type>() const {
+    return std::basic_string<value_type>(data_, size_);
+  }
+
+  constexpr pointer begin() { return data_; }
+  constexpr pointer end() { return data_ + size_; }
+
+  constexpr const_pointer cbegin() const { return data_; }
+  constexpr const_pointer cend() const { return data_ + size_; }
+
+  constexpr reverse_iterator rbegin() {
+    return reverse_iterator(data_ + size_);
+  }
+  constexpr reverse_iterator rend() { return reverse_iterator(data_); }
+
+  constexpr const_reverse_iterator crbegin() const {
+    return const_reverse_iterator(data_ + size_);
+  }
+  constexpr const_reverse_iterator crend() const {
+    return const_reverse_iterator(data_);
+  }
+
+  constexpr static_basic_string(const_pointer s) noexcept {
+    auto begin = data_;
+    while (*s != value_type{}) {
+      *begin++ = *s++;
+    }
+    size_ = begin = data_;
+    data_[N] = value_type{};
+  }
+  constexpr static_basic_string(const_pointer s, size_type len) noexcept {
+    std::copy(s, s + len, data_);
+    size_ = len;
+    data_[N] = value_type{};
+  }
+  constexpr static_basic_string(size_type len, value_type c) noexcept {
+    for (size_type i = 0; i < len; i++) {
+      data_[i] = c;
+    }
+    size_ = len;
+    data_[N] = value_type{};
+  }
+
+ private:
+  size_type size_{0};
+  CharT data_[N + 1]{};
+};
+
+template <size_t N>
+using static_string = static_basic_string<N, char>;
+
 class MD5 {
   constexpr static unsigned int blocksize = 64;
 
  public:
-  MD5();
-  MD5(const char *input, size_t length) {
+  constexpr MD5() noexcept {};
+  constexpr MD5(const std::string_view input) noexcept {
+    update(input.data(), input.size());
+    finalize();
+  }
+  constexpr MD5(const char *input, size_t length) noexcept {
     update(input, length);
     finalize();
   }
-  MD5(const unsigned char *input, size_t length) {
+  constexpr MD5(const unsigned char *input, size_t length) noexcept {
     update(input, length);
     finalize();
   }
-  MD5(const std::string &text) {
-    update(text.data(), text.size());
-    finalize();
-  }
-  std::string hexdigest() const {
+
+  constexpr static_string<32> hexdigest() const noexcept {
+    static_string<32> buf{32, '\0'};
     if (!finalized_) {
-      return "";
+      return buf;
     }
+    constexpr char hexs[] = "0123456789abcdef";
 
-    const char hexs[] = "0123456789abcdef";
-
-    char buf[33];
     for (int i = 0; i < 16; i++) {
       unsigned char c = digest_[i];
-      buf[i * 2] = hexs[c >> 4];
-      buf[i * 2 + 1] = hexs[c & 0x0f];
+      buf.data_[i * 2] = hexs[c >> 4];
+      buf.data_[i * 2 + 1] = hexs[c & 0x0f];
     }
-    buf[32] = 0;
-
-    return std::string(buf);
-  };
-  void update(const char input[], size_t length) {
-    update((const unsigned char *)input, length);
+    return buf;
   }
-  void update(const unsigned char *input, size_t length) {
+
+  constexpr void update(const char input[], size_t length) noexcept {
+    size_t index = count_ / 8 % blocksize;
+    count_ += length << 3;
+
+    while (length > 0) {
+      if (length >= 64 - index) {
+        std::copy_n(input, 64 - index, &buffer_[index]);
+        transform(buffer_);
+        length -= (64 - index);
+        input += (64 - index);
+      } else {
+        std::copy_n(input, length, &buffer_[index]);
+        length = 0;
+        input = nullptr;
+      }
+      index = 0;
+    }
+  }
+  constexpr void update(const unsigned char *input, size_t length) noexcept {
     size_t index = count_ / 8 % blocksize;
     count_ += length << 3;
 
@@ -142,7 +242,7 @@ class MD5 {
     }
   }
 
-  void finalize() {
+  constexpr void finalize() noexcept {
     if (!finalized_) {
       unsigned char bits[8];
       uint32_t counts[2]{static_cast<uint32_t>(count_),
@@ -165,7 +265,7 @@ class MD5 {
   }
 
  private:
-  void transform(unsigned char *block) {
+  constexpr void transform(unsigned char *block) noexcept {
     uint32_t a = state_[0], b = state_[1], c = state_[2], d = state_[3], x[16];
     detail::decode(x, block, blocksize);
 
@@ -255,8 +355,8 @@ class MD5 {
   unsigned char digest_[16];
 };
 
-inline std::string md5sum(std::string const &input) {
-  return MD5(input).hexdigest();
+inline std::string md5sum(std::string_view const &input) {
+  return MD5(input.data(), input.size()).hexdigest();
 }
 inline std::string md5sum(const char *input, size_t length) {
   return MD5(input, length).hexdigest();
