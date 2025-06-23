@@ -2,45 +2,45 @@
 
 [![CMake](https://github.com/shediao/md5.hpp/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/shediao/md5.hpp/actions/workflows/cmake-multi-platform.yml)
 
-一个现代、易于使用、仅头文件的 C++20 MD5 哈希库，支持编译期和运行期计算。
+A modern, easy-to-use, header-only C++20 MD5 hash library that supports both compile-time and runtime calculations.
 
-## 核心功能
+## Core Features
 
-- **编译期计算**: 利用 C++20 `constexpr`，可以在编译阶段直接计算字符串字面量的 MD5 哈希值。
-- **运行期计算**: 提供灵活的流式 API，用于在运行时计算字符串、字节数组或数据流的 MD5。
-- **仅头文件**: 只需包含 `md5/md5.hpp` 即可，无需链接库文件，方便快速集成。
-- **易于使用**: 简洁的 API 设计，无论是简单场景还是复杂需求都能轻松应对。
-- **无依赖**: 不依赖任何第三方库。
+- **Compile-time Calculation**: Leverages C++20 `constexpr` to compute MD5 hashes of string literals directly at compile time.
+- **Runtime Calculation**: Provides a flexible streaming API for computing MD5 hashes of strings, byte arrays, or data streams at runtime.
+- **Header-Only**: Simply include `md5/md5.hpp` with no need to link against a library, allowing for quick integration.
+- **Easy to Use**: A clean API design that is easy to handle for both simple and complex use cases.
+- **Zero Dependencies**: Does not depend on any third-party libraries.
 
-## 使用方法
+## Usage
 
-### 快速开始
+### Quick Start
 
-计算字符串的 MD5 哈希值非常简单：
+Calculating the MD5 hash of a string is very simple:
 
 ```cpp
 #include <iostream>
 #include <md5/md5.hpp>
 
 int main() {
-    // 运行时计算
+    // Runtime calculation
     std::string message = "Hello, world!";
     std::string hash = md5::md5sum(message);
     std::cout << "MD5 of '" << message << "': " << hash << std::endl;
-    // 输出: MD5 of 'Hello, world!': 6cd3556deb0da54bca060b4c39479839
+    // Output: MD5 of 'Hello, world!': 6cd3556deb0da54bca060b4c39479839
 
-    // 编译期计算 (需要 C++20)
+    // Compile-time calculation (requires C++20)
     consteval auto compile_time_hash = md5::MD5("Hello, C++20").hexdigest();
     std::cout << "Compile-time MD5: " << compile_time_hash << std::endl;
-    // 输出: Compile-time MD5: 2fb194837e3eb2f062872007b165620d
+    // Output: Compile-time MD5: 2fb194837e3eb2f062872007b165620d
 
     return 0;
 }
 ```
 
-### 流式 API
+### Streaming API
 
-对于大数据流或分块数据，可以使用 `update` 接口：
+For large data streams or chunked data, you can use the `update` interface:
 
 ```cpp
 #include <iostream>
@@ -54,67 +54,67 @@ int main() {
 
     std::string hash = hasher.hexdigest();
     std::cout << "Streamed MD5: " << hash << std::endl;
-    // 输出: Streamed MD5: 6cd3556deb0da54bca060b4c39479839
+    // Output: Streamed MD5: 6cd3556deb0da54bca060b4c39479839
 }
 ```
 
-## API 介绍
+## API Reference
 
 ### `md5::md5sum(input)`
 
-一个便捷的自由函数，用于快速计算字符串或字节数组的哈希值。
+A convenient free function for quickly calculating the hash of a string or byte array.
 
 - `md5::md5sum(std::string_view const& input)`
 - `md5::md5sum(const char* input, size_t length)`
 
-### `md5::MD5` 类
+### `md5::MD5` Class
 
-提供对哈希计算过程的完整控制。
+Provides full control over the hash calculation process.
 
-- `constexpr MD5()`: 默认构造函数。
-- `constexpr MD5(input, length)`: 构造并直接计算完整数据的哈希值。
-- `constexpr void update(input, length)`: 分块更新哈希计算。
-- `constexpr void finalize()`: 完成计算过程。在调用 `hexdigest()` 前必须调用此函数。
-- `constexpr static_string<32> hexdigest() const`: 返回一个包含 32 个字符的十六进制哈希值。结果类型是 `static_string`，可以隐式转换为 `std::string`。
+- `constexpr MD5()`: Default constructor.
+- `constexpr MD5(input, length)`: Constructs and immediately computes the hash for the complete data.
+- `constexpr void update(input, length)`: Updates the hash calculation in chunks.
+- `constexpr void finalize()`: Finalizes the calculation. This must be called before calling `hexdigest()`.
+- `constexpr static_string<32> hexdigest() const`: Returns a 32-character hexadecimal hash value. The result type is `static_string`, which is implicitly convertible to `std::string`.
 
-## 构建与集成
+## Build and Integration
 
 ### CMake
 
-我们推荐使用 CMake 的 `FetchContent` 或 `add_subdirectory` 来集成 `md5.hpp`。
+We recommend integrating `md5.hpp` using CMake's `FetchContent` or `add_subdirectory`.
 
 ```cmake
-# 在你的 CMakeLists.txt 中
+# In your CMakeLists.txt
 
-# 方法 1: 使用 FetchContent (推荐)
+# Method 1: Using FetchContent (Recommended)
 include(FetchContent)
 FetchContent_Declare(
   md5_hpp
   GIT_REPOSITORY https://github.com/shediao/md5.hpp.git
-  GIT_TAG main # 或者指定一个具体的 release tag
+  GIT_TAG main # Or specify a concrete release tag
 )
 FetchContent_MakeAvailable(md5_hpp)
 
-# 方法 2: 使用 add_subdirectory (如果你将本仓库作为子模块)
+# Method 2: Using add_subdirectory (if you have this repository as a submodule)
 # add_subdirectory(external/md5.hpp)
 
-# 链接到你的目标
+# Link to your target
 target_link_libraries(your_target PRIVATE md5::md5)
 ```
 
-### 手动集成
+### Manual Integration
 
-由于是仅头文件库，你也可以直接将 `include/` 目录下的 `md5/` 文件夹复制到你的项目中，并确保编译器可以找到它。
+Since it is a header-only library, you can also copy the `md5/` directory from `include/` directly into your project and ensure your compiler can find it.
 
 ```cpp
 #include "path/to/your/md5/md5.hpp"
 ```
 
-本项目需要 **C++20** 或更高版本的编译器。
+This project requires a compiler that supports **C++20** or higher.
 
-## 构建测试
+## Building Tests
 
-如果你克隆了本仓库并希望运行测试，可以使用以下命令：
+If you have cloned the repository and want to run the tests, you can use the following commands:
 
 ```bash
 git clone https://github.com/shediao/md5.hpp.git
