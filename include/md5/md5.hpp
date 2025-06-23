@@ -99,9 +99,7 @@ constexpr inline void encode(unsigned char output[], const uint32_t input[],
 }  // namespace detail
 
 template <size_t N, typename CharT>
-class static_basic_string {
-  friend class MD5;
-
+class basic_static_string {
  public:
   using value_type = CharT;
   using pointer = CharT *;
@@ -120,6 +118,7 @@ class static_basic_string {
   constexpr size_type length() const noexcept { return size_; }
   constexpr size_type max_size() const noexcept { return N; }
   constexpr pointer data() noexcept { return data_; }
+  constexpr const_pointer c_str() const noexcept { return data_; }
   constexpr const_pointer data() const noexcept { return data_; }
   constexpr reference operator[](size_type index) noexcept {
     return data_[index];
@@ -149,7 +148,7 @@ class static_basic_string {
     return const_reverse_iterator(data_);
   }
 
-  constexpr static_basic_string(const_pointer s) noexcept {
+  constexpr basic_static_string(const_pointer s) noexcept {
     auto begin = data_;
     while (*s != value_type{}) {
       *begin++ = *s++;
@@ -157,17 +156,35 @@ class static_basic_string {
     size_ = begin = data_;
     data_[N] = value_type{};
   }
-  constexpr static_basic_string(const_pointer s, size_type len) noexcept {
+  constexpr basic_static_string(const_pointer s, size_type len) noexcept {
     std::copy(s, s + len, data_);
     size_ = len;
-    data_[N] = value_type{};
+    data_[size_] = value_type{};
   }
-  constexpr static_basic_string(size_type len, value_type c) noexcept {
+  constexpr basic_static_string(size_type len, value_type c) noexcept {
     for (size_type i = 0; i < len; i++) {
       data_[i] = c;
     }
     size_ = len;
-    data_[N] = value_type{};
+    data_[size_] = value_type{};
+  }
+  constexpr basic_static_string() noexcept {}
+  template <size_t M>
+  constexpr basic_static_string(
+      basic_static_string<M, value_type> const &s) noexcept {
+    static_assert(M <= N, "s.size() > N");
+    std::copy(s.data(), s.data() + s.size(), data_);
+    size_ = s.size();
+    data_[size_] = value_type{};
+  }
+  template <size_t M>
+  constexpr basic_static_string &operator=(
+      basic_static_string<M, value_type> const &s) noexcept {
+    static_assert(M <= N, "s.size() > N");
+    std::copy(s.data(), s.data() + s.size(), data_);
+    size_ = s.size();
+    data_[size_] = value_type{};
+    return *this;
   }
 
  private:
@@ -176,7 +193,7 @@ class static_basic_string {
 };
 
 template <size_t N>
-using static_string = static_basic_string<N, char>;
+using static_string = basic_static_string<N, char>;
 
 class MD5 {
   constexpr static unsigned int blocksize = 64;
@@ -217,8 +234,8 @@ class MD5 {
 
     for (int i = 0; i < 16; i++) {
       unsigned char c = digest_[i];
-      buf.data_[i * 2] = hexs[c >> 4];
-      buf.data_[i * 2 + 1] = hexs[c & 0x0f];
+      buf[i * 2] = hexs[c >> 4];
+      buf[i * 2 + 1] = hexs[c & 0x0f];
     }
     return buf;
   }
