@@ -5,7 +5,8 @@ project(
   LANGUAGES CXX)
 
 set("PROJECT_DESCRIPTION"
-    "A header-only lightweight C++ command line option parser")
+    "A header-only C++20 MD5 hash library that supports both compile-time and runtime calculations"
+)
 set("PROJECT_HOMEPAGE_URL" "https://github.com/shediao/md5.hpp")
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
