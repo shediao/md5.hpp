@@ -54,18 +54,12 @@ TEST(MD5Test, Test3) {
 }
 #endif
 
-template <size_t N>
-consteval bool test_equal(md5::static_string<N> const& s1, const char* s2) {
-  for (size_t i = 0; i < s1.size(); i++) {
-    if (s1[i] != s2[i]) {
-      return false;
-    }
-  }
-
-  return true;
-}
 TEST(MD5Test, Test4) {
+  using namespace md5::literals;
+
+  static_assert("123"_md5 == "202cb962ac59075b964b07152d234b70");
+
 #undef TEST_MATCH
-#define TEST_MATCH(x, y) static_assert(test_equal(md5::MD5(x).hexdigest(), y))
+#define TEST_MATCH(x, y) static_assert(x##_md5 == y)
 #include "./test.h"
 }

@@ -130,21 +130,21 @@ class basic_static_string {
     return std::basic_string<value_type>(data_, size_);
   }
 
-  constexpr pointer begin() { return data_; }
-  constexpr pointer end() { return data_ + size_; }
+  constexpr pointer begin() noexcept { return data_; }
+  constexpr pointer end() noexcept { return data_ + size_; }
 
-  constexpr const_pointer cbegin() const { return data_; }
-  constexpr const_pointer cend() const { return data_ + size_; }
+  constexpr const_pointer cbegin() const noexcept { return data_; }
+  constexpr const_pointer cend() const noexcept { return data_ + size_; }
 
-  constexpr reverse_iterator rbegin() {
+  constexpr reverse_iterator rbegin() noexcept {
     return reverse_iterator(data_ + size_);
   }
-  constexpr reverse_iterator rend() { return reverse_iterator(data_); }
+  constexpr reverse_iterator rend() noexcept { return reverse_iterator(data_); }
 
-  constexpr const_reverse_iterator crbegin() const {
+  constexpr const_reverse_iterator crbegin() const noexcept {
     return const_reverse_iterator(data_ + size_);
   }
-  constexpr const_reverse_iterator crend() const {
+  constexpr const_reverse_iterator crend() const noexcept {
     return const_reverse_iterator(data_);
   }
 
@@ -153,15 +153,15 @@ class basic_static_string {
     while (*s != value_type{}) {
       *begin++ = *s++;
     }
-    size_ = begin = data_;
-    data_[N] = value_type{};
+    size_ = begin - data_;
+    data_[size_] = value_type{};
   }
-  constexpr basic_static_string(const_pointer s, size_type len) noexcept {
+  constexpr basic_static_string(const_pointer s, size_type len) {
     std::copy(s, s + len, data_);
     size_ = len;
     data_[size_] = value_type{};
   }
-  constexpr basic_static_string(size_type len, value_type c) noexcept {
+  constexpr basic_static_string(size_type len, value_type c) {
     for (size_type i = 0; i < len; i++) {
       data_[i] = c;
     }
@@ -187,9 +187,17 @@ class basic_static_string {
     return *this;
   }
 
+  constexpr bool operator==(const value_type *s) {
+    return std::equal(data_, data_ + size_, s) && s[size_] == value_type{};
+  }
+
+  constexpr bool operator==(const basic_static_string &s) {
+    return s.size() == size_ && std::equal(data_, data_ + size_, s.begin());
+  }
+
  private:
   size_type size_{0};
-  CharT data_[N + 1]{};
+  value_type data_[N + 1]{};
 };
 
 template <size_t N>
@@ -401,6 +409,13 @@ inline std::string md5sum(const char *input, size_t length) {
 inline std::string md5sum(const unsigned char *input, size_t length) {
   return MD5(input, length).hexdigest();
 }
+
+namespace literals {
+inline constexpr static_string<32> operator""_md5(const char *s,
+                                                  std::size_t len) {
+  return MD5(s, len).hexdigest();
+}
+}  // namespace literals
 };  // namespace md5
 
 #endif  // __MD5_MD5_HPP__
